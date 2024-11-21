@@ -1,6 +1,7 @@
 package ru.aveskin.marketdatamicroservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.aveskin.marketdatamicroservice.dto.StocksDto;
@@ -11,12 +12,14 @@ import ru.tinkoff.piapi.contract.v1.Share;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TinkoffStockService implements StockService {
     @Value("${ssotoken.signing.key}")
     private String ssoToken;
@@ -42,8 +45,8 @@ public class TinkoffStockService implements StockService {
     public StocksDto getStocksByTickers(TickersDto tickers) {
         List<CompletableFuture<Share>> markerStocks = new ArrayList<>();
         tickers.getTickers().forEach(ticker -> {
-            var shareCF = asyncStockService.getShareByTickerAsync(ticker);
-            markerStocks.add(shareCF);
+                var shareCF = asyncStockService.getShareByTickerAsync(ticker);
+                markerStocks.add(shareCF);
         });
 
         // Используем allOf для ожидания завершения всех CompletableFuture
@@ -53,6 +56,7 @@ public class TinkoffStockService implements StockService {
 
         List<Stock> stockList = markerStocks.stream()
                 .map(CompletableFuture::join) // Получаем Share из каждого CompletableFuture
+                .filter(Objects::nonNull)
                 .map(share -> new Stock(share.getTicker(),
                         share.getFigi(),
                         share.getName(),
