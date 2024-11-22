@@ -77,16 +77,16 @@ services:
 #    volumes:
 #      - c:/kafka/temp/docker-compose/volumes/server-3/:/bitnami/kafka
 #
-#  redis:
-#    image: redis:7.2-rc-alpine
-#    restart: always
-#    container_name: redis
-#    ports:
-#      - "6379:6379"
-#    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
-#    volumes:
-#      - cache:/data
-#
-#volumes:
-#  cache:  # создаем том для хранения данных Redis
-#   driver: local
+  redis:
+    image: redis:7.2-rc-alpine
+    restart: always
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - cache:/data
+
+volumes:
+  cache:  # создаем том для хранения данных Redis
+   driver: local
