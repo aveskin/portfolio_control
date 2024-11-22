@@ -6,6 +6,7 @@ import lombok.Value;
 @AllArgsConstructor
 @Value
 public class Stock {
+    private String uid;
     private String ticker;
     private String figi;
     private String name;
