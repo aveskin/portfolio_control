@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "portfolio_assets", schema = "portfolio")
 @Getter
@@ -27,7 +29,7 @@ public class PortfolioAsset {
     private Integer quantity;
 
     @Column(name = "average_price")
-    private Float averagePrice;
+    private BigDecimal averagePrice;
 
 //    private Timestamp createdAt;
 //

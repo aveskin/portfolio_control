@@ -36,9 +36,23 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<String> handleUnexpectedTypeException(NoSuchElementException ex) {
+    public ResponseEntity<String> handleNoElementException(NoSuchElementException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity<String> handleBadRecEctApiException(ExternalApiException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(NotEnoughMoneyException.class)
+    public ResponseEntity<String> handleNotEnoughMoneyException(NotEnoughMoneyException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(ex.getMessage());
+    }
+
+
+
+
 
 
 }

@@ -49,8 +49,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 userContext.setUserName(username);
                 userContext.setEmail(email.toString());
 
-                var id = claims.getId();
-                userContext.setId(Integer.valueOf(id));
+                var id = claims.get("id");
+                Long longId = ((Integer) id).longValue();
+                userContext.setId(longId);
 
                 List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
