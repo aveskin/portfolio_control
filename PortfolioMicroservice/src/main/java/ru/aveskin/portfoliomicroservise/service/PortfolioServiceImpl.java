@@ -9,7 +9,9 @@ import ru.aveskin.portfoliomicroservise.dto.*;
 import ru.aveskin.portfoliomicroservise.entity.Portfolio;
 import ru.aveskin.portfoliomicroservise.entity.PortfolioAsset;
 import ru.aveskin.portfoliomicroservise.entity.User;
+import ru.aveskin.portfoliomicroservise.exception.NotContainStockException;
 import ru.aveskin.portfoliomicroservise.exception.NotEnoughMoneyException;
+import ru.aveskin.portfoliomicroservise.exception.NotEnoughStocksException;
 import ru.aveskin.portfoliomicroservise.repository.PortfolioRepository;
 import ru.aveskin.portfoliomicroservise.repository.UserRepository;
 
@@ -26,7 +28,6 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
     private final UserContext userContext;
-    //    private final PortfolioAssetRepository portfolioAssetRepository;
     private final ApiStocksService apiStocksService;
 
     @Override
@@ -73,27 +74,11 @@ public class PortfolioServiceImpl implements PortfolioService {
     public PortfolioResponseDto getPortfolio(Long id) {
         Portfolio portfolio = portfolioRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Portfolio with id =  " + id + "  is not found"));
-
-        List<PortfolioAssetDto> assetsDto = portfolio.getAssets().stream()
-                .map(asset -> {
-                    PortfolioAssetDto dto = new PortfolioAssetDto();
-                    dto.setUid(asset.getUid());
-                    dto.setTicker(asset.getTicker());
-                    dto.setName(asset.getName());
-                    dto.setQuantity(asset.getQuantity());
-                    dto.setAveragePrice(asset.getAveragePrice());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        return new PortfolioResponseDto(portfolio.getId(),
-                portfolio.getUser().getId(),
-                portfolio.getUser().getFirstName(),
-                portfolio.getDeposit(),
-                assetsDto);
+        return getPortfolioResponseDto(portfolio);
     }
 
     @Override
+    @Transactional
     public PortfolioResponseDto buyStock(BuyStockRequestDto request) {
         Portfolio portfolio = portfolioRepository.findById(request.getPortfolioId())
                 .orElseThrow(() ->
@@ -110,37 +95,65 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         portfolio.setDeposit(portfolio.getDeposit().subtract(totalPrice));
+        modifyPortfolioAsset(portfolio, stockPrice, stockData, request, totalPrice);
 
-        var assets = portfolio.getAssets();
-        if (!containsUid(portfolio, stockData.getUid())) {
-            PortfolioAsset newAsset = new PortfolioAsset();
-            newAsset.setUid(stockData.getUid());
-            newAsset.setPortfolio(portfolio);
-            newAsset.setName(stockData.getName());
-            newAsset.setTicker(stockData.getTicker());
-            newAsset.setQuantity(request.getQuantity());
-            newAsset.setAveragePrice(totalPrice);
+        portfolioRepository.save(portfolio);
 
-            assets.add(newAsset);
-            portfolio.setAssets(assets);
-        } else {
-            PortfolioAsset relevantAsset = assets.stream()
-                    .filter(asset -> stockData.getUid().equals(asset.getUid()))
-                    .findFirst()
-                    .orElse(null);
+        return getPortfolioResponseDto(portfolio);
+    }
 
-            BigDecimal currentAveragePrice = relevantAsset.getAveragePrice();
+    @Override
+    @Transactional
+    public PortfolioResponseDto sellStock(SellStockRequestDto request) {
+        Portfolio portfolio = portfolioRepository.findById(request.getPortfolioId())
+                .orElseThrow(() ->
+                        new NoSuchElementException("Portfolio with id =  " + request.getPortfolioId() + "  is not found"));
 
-            BigDecimal newAveragePrice = currentAveragePrice
-                    .add(stockPrice.getPrice())
-                    .divide(BigDecimal.valueOf(2));
+        StockExternalDto stockData = apiStocksService.getStockByTicker(request.getTicker());
+        StockPriceExternalDto stockPrice = apiStocksService.getStockPriceByUid(stockData.getUid());
+        BigDecimal totalPrice = stockPrice.getPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
 
-            relevantAsset.setAveragePrice(newAveragePrice);
-            relevantAsset.setQuantity(relevantAsset.getQuantity()+ request.getQuantity());
+        PortfolioAsset relevantAsset = getAvailableAsset(portfolio, stockPrice, stockData, request);
+
+        portfolio.setDeposit(portfolio.getDeposit().add(totalPrice));
+        relevantAsset.setQuantity(relevantAsset.getQuantity() - request.getQuantity());
+        if (relevantAsset.getQuantity() == 0) {
+            relevantAsset.setAveragePrice(BigDecimal.valueOf(0));
         }
 
         portfolioRepository.save(portfolio);
 
+        return getPortfolioResponseDto(portfolio);
+    }
+
+    private boolean isContainUid(Portfolio portfolio, String uid) {
+        List<PortfolioAsset> assets = portfolio.getAssets();
+        return assets != null && assets.stream()
+                .anyMatch(asset -> uid.equals(asset.getUid()));
+    }
+
+    private PortfolioAsset getAvailableAsset(Portfolio portfolio,
+                                             StockPriceExternalDto stockPrice,
+                                             StockExternalDto stockData,
+                                             SellStockRequestDto request) {
+        var assets = portfolio.getAssets();
+        if (!isContainUid(portfolio, stockData.getUid())) {
+            throw new NotContainStockException(stockData.getTicker());
+        }
+        PortfolioAsset relevantAsset = assets.stream()
+                .filter(asset -> stockData.getUid().equals(asset.getUid()))
+                .findFirst()
+                .orElseThrow(() -> new NotContainStockException(request.getTicker()));
+
+        int comparison = request.getQuantity()
+                .compareTo(relevantAsset.getQuantity());
+        if (comparison < 0) {
+            throw new NotEnoughStocksException();
+        }
+        return relevantAsset;
+    }
+
+    private PortfolioResponseDto getPortfolioResponseDto(Portfolio portfolio) {
         List<PortfolioAssetDto> assetsDto = portfolio.getAssets().stream()
                 .map(asset -> {
                     PortfolioAssetDto dto = new PortfolioAssetDto();
@@ -160,9 +173,37 @@ public class PortfolioServiceImpl implements PortfolioService {
                 assetsDto);
     }
 
-    public boolean containsUid(Portfolio portfolio, String uid) {
-        List<PortfolioAsset> assets = portfolio.getAssets();
-        return assets != null && assets.stream()
-                .anyMatch(asset -> uid.equals(asset.getUid()));
+    private void modifyPortfolioAsset(Portfolio portfolio,
+                                      StockPriceExternalDto stockPrice,
+                                      StockExternalDto stockData,
+                                      BuyStockRequestDto request,
+                                      BigDecimal totalPrice) {
+        var assets = portfolio.getAssets();
+        if (!isContainUid(portfolio, stockData.getUid())) {
+            PortfolioAsset newAsset = new PortfolioAsset();
+            newAsset.setUid(stockData.getUid());
+            newAsset.setPortfolio(portfolio);
+            newAsset.setName(stockData.getName());
+            newAsset.setTicker(stockData.getTicker());
+            newAsset.setQuantity(request.getQuantity());
+            newAsset.setAveragePrice(totalPrice);
+
+            assets.add(newAsset);
+            portfolio.setAssets(assets);
+        } else {
+            PortfolioAsset relevantAsset = assets.stream()
+                    .filter(asset -> stockData.getUid().equals(asset.getUid()))
+                    .findFirst()
+                    .orElseThrow(() -> new NotContainStockException(request.getTicker()));
+
+            BigDecimal currentAveragePrice = relevantAsset.getAveragePrice();
+
+            BigDecimal newAveragePrice = currentAveragePrice
+                    .add(stockPrice.getPrice())
+                    .divide(BigDecimal.valueOf(2));
+
+            relevantAsset.setAveragePrice(newAveragePrice);
+            relevantAsset.setQuantity(relevantAsset.getQuantity() + request.getQuantity());
+        }
     }
 }

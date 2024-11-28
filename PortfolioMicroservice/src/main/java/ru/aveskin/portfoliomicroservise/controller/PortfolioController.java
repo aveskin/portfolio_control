@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.aveskin.portfoliomicroservise.dto.BuyStockRequestDto;
 import ru.aveskin.portfoliomicroservise.dto.IncreaseDepositRequestDto;
 import ru.aveskin.portfoliomicroservise.dto.PortfolioResponseDto;
+import ru.aveskin.portfoliomicroservise.dto.SellStockRequestDto;
 import ru.aveskin.portfoliomicroservise.entity.Portfolio;
 import ru.aveskin.portfoliomicroservise.service.PortfolioService;
 
@@ -59,6 +60,13 @@ public class PortfolioController {
     @PostMapping("/buy")
     ResponseEntity<PortfolioResponseDto> buyStock(@RequestBody BuyStockRequestDto request){
         PortfolioResponseDto response = portfolioService.buyStock(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Продать акцию по рыночной цене")
+    @PostMapping("/sell")
+    ResponseEntity<PortfolioResponseDto> sellStock(@RequestBody SellStockRequestDto request){
+        PortfolioResponseDto response = portfolioService.sellStock(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

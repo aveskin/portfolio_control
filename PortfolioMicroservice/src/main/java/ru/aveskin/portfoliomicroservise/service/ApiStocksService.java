@@ -2,6 +2,7 @@ package ru.aveskin.portfoliomicroservise.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -17,7 +18,7 @@ import ru.aveskin.portfoliomicroservise.exception.ExternalApiException;
 public class ApiStocksService {
     private final RestTemplate restTemplate;
 
-    //TODO добавить кеширование
+    @Cacheable(value = "ApiStocksService::getStockByTicker", key = "#ticker")
     public StockExternalDto getStockByTicker(String ticker) {
         String url = "http://localhost:8088/api/stocks/" + ticker;
         StockExternalDto stockData;
@@ -62,10 +63,4 @@ public class ApiStocksService {
         return stockPrice;
 
     }
-
-//    public ResponseEntity<String> createData(Object newData) {
-//        String url = "https://api.example.com/data";
-//        return restTemplate.postForEntity(url, newData, String.class);
-//    }
-
 }

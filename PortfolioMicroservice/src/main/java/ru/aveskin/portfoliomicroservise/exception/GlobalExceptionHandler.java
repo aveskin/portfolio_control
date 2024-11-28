@@ -47,8 +47,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotEnoughMoneyException.class)
     public ResponseEntity<String> handleNotEnoughMoneyException(NotEnoughMoneyException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
+    @ExceptionHandler(NotContainStockException.class)
+    public ResponseEntity<String> handleNotContainStockException(NotContainStockException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(NotEnoughStocksException.class)
+    public ResponseEntity<String> handleNotEnoughStocksExceptionException(NotEnoughStocksException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+
+
+
+
 
 
 
