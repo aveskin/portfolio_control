@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aveskin.portfoliomicroservise.dto.*;
+import ru.aveskin.portfoliomicroservise.entity.MarketAction;
 import ru.aveskin.portfoliomicroservise.entity.Portfolio;
 import ru.aveskin.portfoliomicroservise.entity.PortfolioAsset;
 import ru.aveskin.portfoliomicroservise.entity.User;
@@ -29,6 +30,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final UserRepository userRepository;
     private final UserContext userContext;
     private final ApiStocksService apiStocksService;
+    private final PortfolioHistoryService portfolioHistoryService;
 
     @Override
     @Transactional
@@ -99,6 +101,8 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         portfolioRepository.save(portfolio);
 
+        portfolioHistoryService.setBuyHistory(request, stockPrice, stockData, MarketAction.BUY);
+
         return getPortfolioResponseDto(portfolio);
     }
 
@@ -122,6 +126,8 @@ public class PortfolioServiceImpl implements PortfolioService {
         }
 
         portfolioRepository.save(portfolio);
+
+        portfolioHistoryService.setSellHistory(request, stockPrice, stockData, MarketAction.SELL);
 
         return getPortfolioResponseDto(portfolio);
     }

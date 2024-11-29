@@ -12,6 +12,7 @@ import ru.aveskin.portfoliomicroservise.dto.IncreaseDepositRequestDto;
 import ru.aveskin.portfoliomicroservise.dto.PortfolioResponseDto;
 import ru.aveskin.portfoliomicroservise.dto.SellStockRequestDto;
 import ru.aveskin.portfoliomicroservise.entity.Portfolio;
+import ru.aveskin.portfoliomicroservise.service.PortfolioHistoryService;
 import ru.aveskin.portfoliomicroservise.service.PortfolioService;
 
 

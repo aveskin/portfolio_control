@@ -31,8 +31,4 @@ public class PortfolioAsset {
     @Column(name = "average_price")
     private BigDecimal averagePrice;
 
-//    private Timestamp createdAt;
-//
-//    private Timestamp updatedAt;
-
 }
