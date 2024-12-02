@@ -153,7 +153,7 @@ public class PortfolioServiceImpl implements PortfolioService {
 
         int comparison = request.getQuantity()
                 .compareTo(relevantAsset.getQuantity());
-        if (comparison < 0) {
+        if (comparison > 0) {
             throw new NotEnoughStocksException();
         }
         return relevantAsset;
