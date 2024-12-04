@@ -6,10 +6,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aveskin.portfoliomicroservise.dto.*;
-import ru.aveskin.portfoliomicroservise.entity.MarketAction;
-import ru.aveskin.portfoliomicroservise.entity.Portfolio;
-import ru.aveskin.portfoliomicroservise.entity.PortfolioAsset;
-import ru.aveskin.portfoliomicroservise.entity.User;
+import ru.aveskin.portfoliomicroservise.entity.*;
 import ru.aveskin.portfoliomicroservise.exception.NotContainStockException;
 import ru.aveskin.portfoliomicroservise.exception.NotEnoughMoneyException;
 import ru.aveskin.portfoliomicroservise.exception.NotEnoughStocksException;
@@ -20,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -130,6 +128,33 @@ public class PortfolioServiceImpl implements PortfolioService {
         portfolioHistoryService.setSellHistory(request, stockPrice, stockData, MarketAction.SELL);
 
         return getPortfolioResponseDto(portfolio);
+    }
+
+    @Override
+    public void addAlert(AddAlertRequestDto request) {
+        Portfolio portfolio = portfolioRepository.findById(request.getPortfolioId())
+                .orElseThrow(() ->
+                        new NoSuchElementException("Portfolio with id =  " + request.getPortfolioId() + "  is not found"));
+
+        Optional<PortfolioAlert> foundAlert = portfolio.getAlerts().stream()
+                .filter(alert -> alert.getTicker().equals(request.getTicker()) &&
+                        alert.getAimPrice().equals(request.getAimPrice()))
+                .findFirst();
+        if (foundAlert.isEmpty()) {
+            PortfolioAlert newPortfolioAlert = new PortfolioAlert();
+            newPortfolioAlert.setPortfolio(portfolio);
+            newPortfolioAlert.setTicker(request.getTicker());
+            newPortfolioAlert.setAimPrice(request.getAimPrice());
+            newPortfolioAlert.setCompleted(false);
+
+            List<PortfolioAlert> alerts = portfolio.getAlerts();
+            alerts.add(newPortfolioAlert);
+            portfolio.setAlerts(alerts);
+            portfolioRepository.save(portfolio);
+            log.info("alert was saved, {}", request.getTicker() + request.getAimPrice());
+        } else {
+            log.warn("alert already exist, {}", request.getTicker() + request.getAimPrice());
+        }
     }
 
     private boolean isContainUid(Portfolio portfolio, String uid) {

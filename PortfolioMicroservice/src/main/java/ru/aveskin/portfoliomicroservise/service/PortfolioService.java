@@ -1,9 +1,6 @@
 package ru.aveskin.portfoliomicroservise.service;
 
-import ru.aveskin.portfoliomicroservise.dto.BuyStockRequestDto;
-import ru.aveskin.portfoliomicroservise.dto.IncreaseDepositRequestDto;
-import ru.aveskin.portfoliomicroservise.dto.PortfolioResponseDto;
-import ru.aveskin.portfoliomicroservise.dto.SellStockRequestDto;
+import ru.aveskin.portfoliomicroservise.dto.*;
 
 import java.math.BigDecimal;
 
@@ -20,4 +17,6 @@ public interface PortfolioService {
     PortfolioResponseDto buyStock(BuyStockRequestDto request);
 
     PortfolioResponseDto sellStock(SellStockRequestDto request);
+
+    void addAlert(AddAlertRequestDto request);
 }
