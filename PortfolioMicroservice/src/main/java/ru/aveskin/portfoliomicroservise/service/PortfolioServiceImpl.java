@@ -141,11 +141,19 @@ public class PortfolioServiceImpl implements PortfolioService {
                         alert.getAimPrice().equals(request.getAimPrice()))
                 .findFirst();
         if (foundAlert.isEmpty()) {
+            StockExternalDto stockData = apiStocksService.getStockByTicker(request.getTicker());
+            StockPriceExternalDto stockPrice = apiStocksService.getStockPriceByUid(stockData.getUid());
+
             PortfolioAlert newPortfolioAlert = new PortfolioAlert();
             newPortfolioAlert.setPortfolio(portfolio);
             newPortfolioAlert.setTicker(request.getTicker());
             newPortfolioAlert.setAimPrice(request.getAimPrice());
             newPortfolioAlert.setCompleted(false);
+            newPortfolioAlert.setUid(stockData.getUid());
+
+            //показывает выше или ниже текущей цены было выставлено оповещение
+            //Нужно для анализа в сервисе планировщика
+            newPortfolioAlert.setPositiveTrigger(stockPrice.getPrice().compareTo(request.getAimPrice()) > 0);
 
             List<PortfolioAlert> alerts = portfolio.getAlerts();
             alerts.add(newPortfolioAlert);

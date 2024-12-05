@@ -31,4 +31,9 @@ public class PortfolioAlert {
     @Column(name = "is_completed")
     private boolean isCompleted;
 
+    @Column(name = "uid", nullable = false)
+    private String uid;
+
+    @Column(name = "is_positive_triger")
+    private boolean isPositiveTrigger;
 }

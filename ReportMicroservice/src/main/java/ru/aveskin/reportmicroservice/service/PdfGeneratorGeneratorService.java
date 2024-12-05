@@ -54,10 +54,17 @@ public class PdfGeneratorGeneratorService implements ReportGeneratorService {
             table.addHeaderCell("Current Price");
             table.addHeaderCell("Created At");
 
-            log.info("получение данных");
-            List<ReportContent> content = getContentByTickerAndDateRange(request.getTicker(),
-                    request.getDateLow(),
-                    request.getDateHigh());
+            log.info("получение данных из БД");
+            List<ReportContent> content;
+            if (request.getTicker() != null) {
+                content = getContentByTickerAndDateRange(request.getTicker(),
+                        request.getDateLow(),
+                        request.getDateHigh());
+            } else {
+                content = getContentByDateRange(
+                        request.getDateLow(),
+                        request.getDateHigh());
+            }
 
             log.info("Добавление данных в таблицу");
             for (ReportContent entity : content) {
@@ -78,6 +85,16 @@ public class PdfGeneratorGeneratorService implements ReportGeneratorService {
             throw new RuntimeException("Ошибка при создании PDF-документа", e);
         }
 
+    }
+
+    private List<ReportContent> getContentByDateRange(LocalDate dateLow, LocalDate dateHigh) {
+        String sql = "SELECT * FROM portfolio.action_history WHERE created_at BETWEEN ? AND ?";
+
+        log.info("Выполнение запроса в БД");
+        return jdbcTemplate.query(sql, new Object[]{
+                dateLow,
+                dateHigh
+        }, reportContentRowMapper);
     }
 
     private List<ReportContent> getContentByTickerAndDateRange(String ticker, LocalDate dateLow, LocalDate dateHigh) {

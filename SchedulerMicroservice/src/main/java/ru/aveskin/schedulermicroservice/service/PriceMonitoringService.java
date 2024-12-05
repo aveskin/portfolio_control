@@ -2,7 +2,6 @@ package ru.aveskin.schedulermicroservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.aveskin.schedulermicroservice.dto.AlertTriggeredEvent;
@@ -25,7 +24,7 @@ public class PriceMonitoringService {
     private final ApiStocksService apiStocksService;
 
 
-    @Scheduled(fixedRateString = "${SCHEDULED_FIXED_RATE}")
+    @Scheduled(fixedRateString = "${SCHEDULED_FIXED_RATE_GET_PRICES}")
     public void monitorPrices() {
         log.info("Получение данных из БД");
         List<PortfolioAlert> alerts = portfolioAlertRepository.findByIsCompletedFalse();
@@ -38,21 +37,26 @@ public class PriceMonitoringService {
         log.info("Получаем текущие цены по выбраным данным");
         Map<String, BigDecimal> currentPrices =
                 fetchCurrentPrices(portfolioAlertRepository.findDistinctUidList());
+        if (currentPrices.isEmpty()) {
+            log.warn("Цены не получены");
+            return;
+        }
 
         log.info("Проверяем уровни цен");
         List<PortfolioAlert> triggeredTickers = checkPriceLevels(currentPrices, alerts);
+        if (triggeredTickers.isEmpty()) {
+            log.info("Уровни цен не прошли проверку");
+            return;
+        }
 
-
-        log.info("Отправляем в кафку уведомления для достигнутых цен");
         for (PortfolioAlert alert : triggeredTickers) {
+            log.info("Отправляем в кафку уведомления для достигнутых цен,{}", alert.getTicker() + alert.getAimPrice());
             kafkaEventSender.sendAlertTriggeredEvent(
                     new AlertTriggeredEvent(alert.getId(), alert.getTicker(), alert.getAimPrice()));
 
-            alert.setCompleted(true);
-            portfolioAlertRepository.save(alert);
+            portfolioAlertRepository.delete(alert);
+            log.info("Обработаный alert удален из БД,{}", alert.getTicker() + alert.getAimPrice());
         }
-
-
     }
 
     private List<PortfolioAlert> checkPriceLevels(Map<String, BigDecimal> currentPrices, List<PortfolioAlert> alerts) {
@@ -64,9 +68,14 @@ public class PriceMonitoringService {
 
             if (currentPrices.containsKey(uid)) {
                 BigDecimal currentPrice = currentPrices.get(uid);
-
-                if (currentPrice.compareTo(aimPrice) >= 0) {
-                    triggeredAlerts.add(alert);
+                if (alert.isPositiveTrigger()) {
+                    if (currentPrice.compareTo(aimPrice) >= 0) {
+                        triggeredAlerts.add(alert);
+                    }
+                } else {
+                    if (currentPrice.compareTo(aimPrice) < 0) {
+                        triggeredAlerts.add(alert);
+                    }
                 }
             }
         }

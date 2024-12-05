@@ -1,4 +1,5 @@
 package ru.aveskin.emailnotificationmicroservice.config;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -30,13 +31,13 @@ public class KafkaConfig {
     }
 
     @Bean
-    ConsumerFactory<String, Object> consumerFactory() {
+    ConsumerFactory<String, Object> consumerFactory1() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, environment.getProperty("spring.kafka.consumer.bootstrap-servers"));
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getProperty("spring.kafka.consumer.group-id"));
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getProperty("spring.kafka.consumer.group-id1"));  // 1 группа потребителей
         config.put(JsonDeserializer.TRUSTED_PACKAGES,
                 environment.getProperty("spring.kafka.consumer.properties.spring.json.trusted.packages"));
 
@@ -44,13 +45,37 @@ public class KafkaConfig {
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory
-            (ConsumerFactory<String, Object> consumerFactory, KafkaTemplate kafkaTemplate) {
+    ConsumerFactory<String, Object> consumerFactory2() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, environment.getProperty("spring.kafka.consumer.bootstrap-servers"));
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, environment.getProperty("spring.kafka.consumer.group-id2"));  // 2 группа потребителей
+        config.put(JsonDeserializer.TRUSTED_PACKAGES,
+                environment.getProperty("spring.kafka.consumer.properties.spring.json.trusted.packages"));
+
+        return new DefaultKafkaConsumerFactory<>(config);
+    }
+
+    @Bean
+    ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory1
+            (ConsumerFactory<String, Object> consumerFactory1, KafkaTemplate kafkaTemplate) {
+        return createKafkaListenerContainerFactory(consumerFactory1, kafkaTemplate);
+    }
+
+    @Bean
+    ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory2
+            (ConsumerFactory<String, Object> consumerFactory2, KafkaTemplate kafkaTemplate) {
+        return createKafkaListenerContainerFactory(consumerFactory2, kafkaTemplate);
+    }
+
+    private ConcurrentKafkaListenerContainerFactory<String, Object> createKafkaListenerContainerFactory(
+            ConsumerFactory<String, Object> consumerFactory, KafkaTemplate kafkaTemplate) {
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaTemplate),
                 new FixedBackOff(3000, 3));
         errorHandler.addNotRetryableExceptions(NonRetryableException.class);
         errorHandler.addRetryableExceptions(RuntimeException.class);
-
 
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -62,9 +87,8 @@ public class KafkaConfig {
 
     @Bean
     KafkaTemplate<String, Object> kafkaTemplate(ProducerFactory<String, Object> producerFactory) {
-        return new KafkaTemplate<String, Object>(producerFactory);
+        return new KafkaTemplate<>(producerFactory);
     }
-
 
     @Bean
     ProducerFactory<String, Object> producerFactory() {

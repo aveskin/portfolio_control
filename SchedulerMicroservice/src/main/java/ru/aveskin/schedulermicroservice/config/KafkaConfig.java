@@ -67,8 +67,17 @@ public class KafkaConfig {
 
 
     @Bean
-    NewTopic createTopic() {
+    NewTopic createAlertTopic() {
         return TopicBuilder.name("alert-created-events-topic")
+                .partitions(3)
+                .replicas(3)
+                .configs(Map.of("min.insync.replicas", "2"))
+                .build();
+    }
+
+    @Bean
+    NewTopic createDalyReportTopic() {
+        return TopicBuilder.name("daily-report-events-topic")
                 .partitions(3)
                 .replicas(3)
                 .configs(Map.of("min.insync.replicas", "2"))

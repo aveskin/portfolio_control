@@ -33,4 +33,7 @@ public class PortfolioAlert {
 
     @Column(name = "uid")
     private String uid;
+
+    @Column(name = "is_positive_triger")
+    private boolean isPositiveTrigger;
 }

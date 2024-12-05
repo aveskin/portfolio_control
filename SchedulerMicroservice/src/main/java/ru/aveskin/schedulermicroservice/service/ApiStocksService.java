@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ru.aveskin.schedulermicroservice.dto.StockPriceDto;
+import ru.aveskin.schedulermicroservice.dto.StockPricesDto;
 
 import java.util.List;
 
@@ -16,8 +17,11 @@ import java.util.List;
 public class ApiStocksService {
     private final RestTemplate restTemplate;
 
-    public List<StockPriceDto> getStockPrisesByUidList(List<String> request) {
+    public List<StockPriceDto> getStockPrisesByUidList(List<String> prices) {
         String url = "http://localhost:8088/api/stocks/price_list";
+
+        StockPricesDto request = new StockPricesDto();
+        request.setPrices(prices);
 
         try {
             StockPriceDto[] response = restTemplate.postForObject(url, request, StockPriceDto[].class);
