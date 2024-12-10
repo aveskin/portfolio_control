@@ -39,12 +39,13 @@ public class PortfolioServiceImpl implements PortfolioService {
         Portfolio portfolio = new Portfolio();
         portfolio.setUser(user);
         portfolio.setAssets(new ArrayList<>());
+        portfolio.setDeposit(new BigDecimal(0));
         Portfolio newPortfolio = portfolioRepository.save(portfolio);
 
         return new PortfolioResponseDto(newPortfolio.getId(),
                 newPortfolio.getUser().getId(),
                 newPortfolio.getUser().getFirstName(),
-                new BigDecimal(10_000),
+                new BigDecimal(0),
                 new ArrayList<>());
     }
 

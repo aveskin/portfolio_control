@@ -1,29 +1,14 @@
-version: '3.5'
-
 services:
-#  app:
-#    image: my-app:latest
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/TaskMngSys
-#      SPRING_DATASOURCE_USERNAME: user
-#      SPRING_DATASOURCE_PASSWORD: password
-#    depends_on:
-#      - postgres_auth
+
 
   postgres:
     image: 'postgres:14.3-alpine'
     container_name: 'java-postgres'
     ports:
-      - 5433:5432
+      - "5433:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-
 
 
   kafka-1:
@@ -88,5 +73,7 @@ services:
       - cache:/data
 
 volumes:
-  cache:  # создаем том для хранения данных Redis
-   driver: local
+  cache: # создаем том для хранения данных Redis
+    driver: local
+
+

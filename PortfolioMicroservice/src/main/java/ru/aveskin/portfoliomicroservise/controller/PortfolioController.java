@@ -2,6 +2,7 @@ package ru.aveskin.portfoliomicroservise.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -37,8 +38,8 @@ public class PortfolioController {
     }
 
     @Operation(summary = "Удаляет портфель по Id")
-    @DeleteMapping("/delete")
-    ResponseEntity<Portfolio> deletePortfolio(@RequestBody Long id) {
+    @DeleteMapping("/delete/{id}")
+    ResponseEntity<Portfolio> deletePortfolio(@PathVariable Long id) {
         portfolioService.deletePortfolio(id);
         log.info("портфель с id = " + id + "удален: " + LocalDateTime.now());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -46,7 +47,7 @@ public class PortfolioController {
 
     @Operation(summary = "Пополнить счет портфеля")
     @PutMapping("/add_money")
-    ResponseEntity<Void> increaseDeposit(@RequestBody IncreaseDepositRequestDto request) {
+    ResponseEntity<Void> increaseDeposit(@RequestBody @Valid IncreaseDepositRequestDto request) {
         portfolioService.increaseDeposit(request);
         log.info("счет портфеля с id = " + request.getPortfolioId() + "пополнен: " + LocalDateTime.now());
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
@@ -54,21 +55,21 @@ public class PortfolioController {
 
     @Operation(summary = "Купить акцию по рыночной цене")
     @PostMapping("/buy")
-    ResponseEntity<PortfolioResponseDto> buyStock(@RequestBody BuyStockRequestDto request) {
+    ResponseEntity<PortfolioResponseDto> buyStock(@RequestBody @Valid BuyStockRequestDto request) {
         PortfolioResponseDto response = portfolioService.buyStock(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @Operation(summary = "Продать акцию по рыночной цене")
     @PostMapping("/sell")
-    ResponseEntity<PortfolioResponseDto> sellStock(@RequestBody SellStockRequestDto request) {
+    ResponseEntity<PortfolioResponseDto> sellStock(@RequestBody @Valid SellStockRequestDto request) {
         PortfolioResponseDto response = portfolioService.sellStock(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @Operation(summary = "Добавление наблюдения за ценой акции(оповещение при достижении цены)")
     @PostMapping("/add_alert")
-    ResponseEntity<Void> addAlert(@RequestBody AddAlertRequestDto request) {
+    ResponseEntity<Void> addAlert(@RequestBody @Valid AddAlertRequestDto request) {
         portfolioService.addAlert(request);
         return new ResponseEntity<>(null, HttpStatus.CREATED);
     }
